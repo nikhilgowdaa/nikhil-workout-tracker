@@ -23,7 +23,11 @@ const workouts = {
 };
 
 const icons = {
-  'Back and Biceps': '💪', 'Chest and Triceps': '🏋️', 'Arms and Shoulders': '🦾', 'Legs': '🦵', 'Abs': '🔥'
+  'Back and Biceps': '💪',
+  'Chest and Triceps': '🏋️',
+  'Arms and Shoulders': '🦾',
+  'Legs': '🦵',
+  'Abs': '🔥'
 };
 
 const compounds = ['Bench Press', 'Incline Bench Press', 'Seated DB Shoulder Press', 'One Arm Dumbbell Row', 'Seated Cable Rows', 'Lat Pulldown'];
@@ -31,114 +35,34 @@ const app = document.getElementById('app');
 const timerEl = document.getElementById('timer');
 
 function home() {
-  app.innerHTML = '<div class="home-eyebrow">Training</div><div class="home-title">My Workouts</div><div class="workout-list"></div>';
+  app.innerHTML =
+    '<div class="home-eyebrow">Training</div>' +
+    '<div class="home-title">My Workouts</div>' +
+    '<div class="workout-list"></div>';
   const list = app.querySelector('.workout-list');
   Object.keys(workouts).forEach(w => {
     const d = document.createElement('div');
     d.className = 'workout-card';
-    d.innerHTML = '<div class="workout-icon">' + icons[w] + '</div><div class="workout-info"><div class="workout-name">' + w + '</div><div class="workout-meta">' + workouts[w].length + ' exercises</div></div><div class="chevron">›</div>';
+    d.innerHTML =
+      '<div class="workout-icon">' + icons[w] + '</div>' +
+      '<div class="workout-info">' +
+        '<div class="workout-name">' + w + '</div>' +
+        '<div class="workout-meta">' + workouts[w].length + ' exercises</div>' +
+      '</div>' +
+      '<div class="chevron">›</div>';
     d.addEventListener('click', () => showWorkout(w));
     list.appendChild(d);
   });
 }
 
 function showWorkout(w) {
-  app.innerHTML = '<div class="nav-bar"><button class="btn-back" id="homeBtn">‹</button><div class="nav-title">' + w + '</div></div><div class="exercise-list"></div>';
+  app.innerHTML =
+    '<div class="nav-bar">' +
+      '<button class="btn-back" id="homeBtn">‹</button>' +
+      '<div class="nav-title">' + w + '</div>' +
+    '</div>' +
+    '<div class="exercise-list"></div>';
   document.getElementById('homeBtn').addEventListener('click', home);
-  const list = app.querySelector('.exercise-list');
-  workouts[w].forEach(ex => {
-    const c = document.createElement('div');
-    c.className = 'exercise-card';
-    c.innerHTML = '<span class="ex-name">' + ex + '</span><span class="chevron">›</span>';
-    c.addEventListener('click', () => showExercise(w, ex));
-    list.appendChild(c);
-  });
-}
-
-function showExercise(w, ex) {
-  lastRestTime = compounds.includes(ex) ? 120 : 90;
-  let html = '<div class="nav-bar"><button class="btn-back" id="backBtn">‹</button><div class="nav-title">' + ex + '</div></div>';
-  html += '<div class="sets-wrap"><table id="tbl"><thead><tr><th>SET</th><th>WEIGHT</th><th>REPS</th><th></th><th></th></tr></thead><tbody></tbody></table><button class="btn-add-set" id="addSet">+ Add Set</button></div>';
-
-  let hist = JSON.parse(localStorage.getItem(ex) || '[]');
-  html += '<h2 style="margin: 40px 0 20px 0; font-size: 1.5rem;">History</h2>';
-  [...hist].reverse().forEach(session => {
-    html += '<div class="prev-card" style="margin-bottom: 20px;"><div class="prev-label" style="font-weight: bold; color: #888; margin-bottom: 8px;">' + session.date + '</div>' + session.sets.map((s, i) => '<div class="prev-row"><span class="prev-set">Set ' + (i + 1) + '</span><span class="prev-val">' + s.weight + ' kg &nbsp;×&nbsp; ' + s.reps + ' reps</span></div>').join('') + '</div>';
-  });
-
-  app.innerHTML = html;
-  document.getElementById('backBtn').addEventListener('click', () => showWorkout(w));
-  document.getElementById('addSet').addEventListener('click', () => addRow(ex, document.querySelectorAll('#tbl tbody tr').length + 1));
-
-  const todayStr = new Date().toLocaleDateString();
-  const todayEntry = hist.find(x => x.date === todayStr);
-  const n = todayEntry ? todayEntry.sets.length : (hist[hist.length - 1]?.sets.length || 3);
-  for (let i = 1; i <= n; i++) addRow(ex, i, todayEntry?.sets[i - 1] || hist[hist.length - 1]?.sets[i - 1] || {}, !!todayEntry?.sets[i - 1]);
-}
-
-function addRow(ex, n, data = {}, isLogged = false) {
-  const tr = document.createElement('tr');
-  tr.innerHTML = '<td class="set-num">' + n + '</td><td><input class="wt-in" type="number" inputmode="decimal" value="' + (data.weight || '') + '" ' + (isLogged ? 'disabled' : '') + '></td><td><input class="rp-in" type="number" inputmode="numeric" value="' + (data.reps || '') + '" ' + (isLogged ? 'disabled' : '') + '></td><td><button class="log-btn" ' + (isLogged ? 'disabled' : '') + '>' + (isLogged ? '✓' : 'LOG') + '</button></td><td><button class="del-btn">✕</button></td>';
-  if (isLogged) tr.classList.add('logged');
-  document.querySelector('#tbl tbody').appendChild(tr);
-
-  tr.querySelector('.log-btn').addEventListener('click', () => {
-    const wt = tr.querySelector('.wt-in').value, rp = tr.querySelector('.rp-in').value;
-    if (!wt || !rp) return alert('Enter weight and reps');
-    let hist = JSON.parse(localStorage.getItem(ex) || '[]');
-    let today = hist.find(x => x.date === new Date().toLocaleDateString()) || { date: new Date().toLocaleDateString(), sets: [] };
-    if (!hist.includes(today)) hist.push(today);
-    today.sets[n - 1] = { weight: wt, reps: rp };
-    localStorage.setItem(ex, JSON.stringify(hist));
-    tr.classList.add('logged');
-    tr.querySelector('.log-btn').disabled = true;
-    tr.querySelector('.log-btn').textContent = '✓';
-    tr.querySelectorAll('input').forEach(i => i.disabled = true);
-    startTimer(lastRestTime);
-  });
-
-  tr.querySelector('.del-btn').addEventListener('click', () => {
-    let hist = JSON.parse(localStorage.getItem(ex) || '[]');
-    let ti = hist.findIndex(x => x.date === new Date().toLocaleDateString());
-    if (ti !== -1) {
-      hist[ti].sets.splice(n - 1, 1);
-      if (hist[ti].sets.length === 0) hist.splice(ti, 1);
-      localStorage.setItem(ex, JSON.stringify(hist));
-    }
-    tr.remove();
-    document.querySelectorAll('.set-num').forEach((el, i) => el.textContent = i + 1);
-  });
-}
-
-function startTimer(sec) {
-  lastRestTime = sec;
-  const finishTime = Date.now() + (sec * 1000);
-  localStorage.setItem('timerFinish', finishTime);
-  clearInterval(window.ti);
-  timerEl.classList.remove('hidden');
-
-  function render() {
-    const remainingMs = parseInt(localStorage.getItem('timerFinish')) - Date.now();
-    const remainingSec = Math.max(0, Math.floor(remainingMs / 1000));
-    const mins = Math.floor(remainingSec / 60), secs = String(remainingSec % 60).padStart(2, '0');
-    
-    timerEl.innerHTML = '<div class="timer-label">' + (remainingSec > 0 ? 'Rest Timer' : 'Rest Finished! 💪') + '</div><div class="timer-time">' + mins + ':' + secs + '</div><div class="timer-btns"><button class="t-skip" id="skip">Close</button><button class="t-add" id="p15">+15s</button><button class="t-add" id="p30">+30s</button><input type="number" id="customTime" placeholder="Custom (s)" style="width:70px; padding:5px; border-radius:4px; border:none;"></div>';
-    
-    document.getElementById('skip').onclick = () => { localStorage.removeItem('timerFinish'); clearInterval(window.ti); timerEl.classList.add('hidden'); };
-    document.getElementById('p15').onclick = () => { localStorage.setItem('timerFinish', parseInt(localStorage.getItem('timerFinish')) + 15000); render(); };
-    document.getElementById('p30').onclick = () => { localStorage.setItem('timerFinish', parseInt(localStorage.getItem('timerFinish')) + 30000); render(); };
-    document.getElementById('customTime').onchange = (e) => { localStorage.setItem('timerFinish', Date.now() + (e.target.value * 1000)); render(); };
-    if (remainingSec <= 0) clearInterval(window.ti);
-  }
-  window.ti = setInterval(render, 500);
-  render();
-}
-
-window.addEventListener('load', () => {
-  if (localStorage.getItem('timerFinish') && (parseInt(localStorage.getItem('timerFinish')) - Date.now()) > 0) startTimer(0);
-});
-
-home();  document.getElementById('homeBtn').addEventListener('click', home);
   const list = app.querySelector('.exercise-list');
   workouts[w].forEach(ex => {
     const c = document.createElement('div');
