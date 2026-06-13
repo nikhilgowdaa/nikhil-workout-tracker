@@ -1,217 +1,103 @@
 /* ── Base ───────────────────────────────────────── */
-*{box-sizing:border-box;margin:0;padding:0}
-body{
-  font-family:-apple-system,'SF Pro Display',Arial,sans-serif;
-  background:#0a0a0a;
-  color:#fff;
-  min-height:100vh;
-  max-width:430px;
-  margin:0 auto;
-  padding-bottom:48px;
-  -webkit-font-smoothing:antialiased;
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, 'SF Pro Display', Arial, sans-serif;
+  background: #0a0a0a;
+  color: #fff;
+  min-height: 100vh;
+  max-width: 430px;
+  margin: 0 auto;
+  padding-bottom: 48px;
+  -webkit-font-smoothing: antialiased;
 }
 
 /* ── Home ───────────────────────────────────────── */
-.home-eyebrow{
-  padding:52px 20px 4px;
-  font-size:12px;font-weight:700;
-  letter-spacing:0.14em;text-transform:uppercase;
-  color:#c8f45a;
+.home-eyebrow {
+  padding: 52px 20px 4px;
+  font-size: 12px; font-weight: 700;
+  letter-spacing: 0.14em; text-transform: uppercase;
+  color: #c8f45a;
 }
-.home-title{
-  padding:4px 20px 28px;
-  font-size:36px;font-weight:800;
-  letter-spacing:-0.02em;
-  line-height:1.1;
+.home-title {
+  padding: 4px 20px 28px;
+  font-size: 36px; font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
 }
-.workout-list{padding:0 16px}
+.workout-list { padding: 0 16px; }
 
-.workout-card{
-  background:#141414;
-  border:1px solid #1e1e1e;
-  border-radius:20px;
-  padding:14px 16px;
-  margin-bottom:10px;
-  display:flex;align-items:center;gap:14px;
-  cursor:pointer;
-  transition:background .12s,border-color .12s;
-  -webkit-tap-highlight-color:transparent;
+.workout-card {
+  background: #141414;
+  border: 1px solid #1e1e1e;
+  border-radius: 20px;
+  padding: 14px 16px;
+  margin-bottom: 10px;
+  display: flex; align-items: center; gap: 14px;
+  cursor: pointer;
+  transition: background .12s, border-color .12s;
 }
-.workout-card:active{background:#1c1c1c;border-color:#2c2c2c}
+.workout-card:hover { background: #1a1a1a; border-color: #333; }
 
-.workout-icon{
-  width:52px;height:52px;
-  border-radius:15px;
-  background:#1e1e1e;
-  display:flex;align-items:center;justify-content:center;
-  font-size:24px;flex-shrink:0;
+/* ── Workout Detail ─────────────────────────────── */
+.nav-bar { display: flex; align-items: center; padding: 20px; gap: 12px; }
+.btn-back {
+  background: #1a1a1a; border: none; color: #fff;
+  width: 36px; height: 36px; border-radius: 12px;
+  cursor: pointer; font-size: 20px;
 }
-.workout-info{flex:1;min-width:0}
-.workout-name{font-size:16px;font-weight:700;line-height:1.2}
-.workout-meta{font-size:13px;color:#555;margin-top:3px}
+.nav-title { font-size: 20px; font-weight: 700; }
 
-/* ── Shared nav ─────────────────────────────────── */
-.chevron{color:#2e2e2e;font-size:24px;font-weight:300;line-height:1;flex-shrink:0}
+.sets-wrap { padding: 0 20px; }
+table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+th { text-align: left; color: #666; font-size: 12px; padding: 8px; }
+td { padding: 8px 4px; }
 
-.nav-bar{
-  display:flex;align-items:center;
-  padding:16px 16px 10px;
-  gap:10px;
-}
-.btn-back{
-  width:36px;height:36px;border-radius:50%;
-  background:#1e1e1e;border:none;
-  color:#fff;font-size:24px;line-height:1;
-  cursor:pointer;display:flex;align-items:center;justify-content:center;
-  flex-shrink:0;padding-bottom:1px;
-  -webkit-tap-highlight-color:transparent;
-}
-.nav-title{
-  font-size:18px;font-weight:700;flex:1;
-  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+input {
+  width: 100%; background: #1a1a1a; border: 1px solid #333;
+  color: #fff; padding: 8px; border-radius: 8px;
+  text-align: center;
 }
 
-/* ── Exercise list ──────────────────────────────── */
-.exercise-list{padding:4px 16px}
-.exercise-card{
-  background:#141414;border:1px solid #1e1e1e;
-  border-radius:14px;padding:15px 16px;margin-bottom:8px;
-  display:flex;align-items:center;justify-content:space-between;
-  cursor:pointer;transition:background .12s;
-  -webkit-tap-highlight-color:transparent;
+.log-btn, .del-btn {
+  background: #1a1a1a; border: 1px solid #333; color: #fff;
+  cursor: pointer; width: 32px; height: 32px;
+  border-radius: 8px;
+  display: inline-flex; align-items: center; justify-content: center;
 }
-.exercise-card:active{background:#1c1c1c}
-.ex-name{font-size:15px;font-weight:500;line-height:1.3;flex:1;margin-right:8px}
+.log-btn { font-size: 10px; font-weight: 700; background: #c8f45a; color: #000; border: none; }
+.log-btn:disabled { background: #333; color: #666; cursor: default; }
 
-/* ── Previous session card ──────────────────────── */
-.prev-card{
-  margin:0 16px 4px;
-  background:#141414;border:1px solid #1e1e1e;
-  border-radius:16px;padding:14px 16px;
-}
-.prev-label{
-  font-size:11px;font-weight:700;
-  text-transform:uppercase;letter-spacing:0.12em;
-  color:#c8f45a;margin-bottom:10px;
-}
-.prev-row{
-  display:flex;justify-content:space-between;align-items:center;
-  padding:4px 0;border-bottom:1px solid #1c1c1c;
-}
-.prev-row:last-child{border-bottom:none}
-.prev-set{font-size:12px;font-weight:700;color:#555;text-transform:uppercase;letter-spacing:0.06em}
-.prev-val{font-size:14px;color:#aaa;font-weight:500}
+/* ── History & Grayed Rows ──────────────────────── */
+.prev-card { background: #111; border-radius: 16px; padding: 16px; margin: 0 20px; }
+.prev-label { font-size: 12px; color: #666; margin-bottom: 8px; }
+.prev-row { display: flex; justify-content: space-between; padding: 4px 0; font-size: 14px; }
 
-/* ── Sets table ─────────────────────────────────── */
-.sets-wrap{padding:12px 16px 0}
+/* NEW: Styles for logged sets */
+tr.logged input { background: #222; color: #888; border: 1px solid #222; }
 
-table{width:100%;border-collapse:separate;border-spacing:0 7px}
-
-thead th{
-  font-size:10px;font-weight:700;
-  text-transform:uppercase;letter-spacing:0.12em;
-  color:#3a3a3a;padding:0 6px 0;text-align:center;
+.btn-add-set {
+  width: 100%; margin-top: 16px;
+  background: transparent;
+  border: 1px dashed #333; color: #777;
+  border-radius: 12px; padding: 12px;
+  font-size: 14px; font-weight: 600;
+  cursor: pointer;
 }
-
-tbody tr{background:#141414}
-
-tbody td{
-  padding:11px 6px;text-align:center;
-  border-top:1px solid #1e1e1e;
-  border-bottom:1px solid #1e1e1e;
-  vertical-align:middle;
-}
-tbody td:first-child{
-  border-left:1px solid #1e1e1e;
-  border-radius:13px 0 0 13px;
-  width:30px;
-  font-size:12px;font-weight:700;color:#3a3a3a;
-}
-tbody td:last-child{
-  border-right:1px solid #1e1e1e;
-  border-radius:0 13px 13px 0;
-  width:36px;
-}
-
-input[type="number"]{
-  width:64px;padding:9px 4px;
-  border-radius:9px;
-  background:#1e1e1e;border:1px solid #2a2a2a;
-  color:#fff;text-align:center;
-  font-size:16px;font-weight:600;
-  -webkit-appearance:none;-moz-appearance:textfield;
-}
-input[type="number"]:focus{outline:none;border-color:#c8f45a;background:#222}
-input[type="number"]::-webkit-inner-spin-button,
-input[type="number"]::-webkit-outer-spin-button{-webkit-appearance:none}
-
-.log-btn{
-  background:#c8f45a;color:#0a0a0a;
-  border:none;border-radius:8px;
-  padding:8px 10px;min-width:46px;
-  font-size:12px;font-weight:800;
-  letter-spacing:0.04em;cursor:pointer;
-  transition:opacity .15s;
-}
-.log-btn:disabled{
-  background:#1d2e0c;color:#3a5510;cursor:default;
-}
-
-tr.logged{opacity:.55}
-tr.logged .log-btn{background:transparent;border:1px solid #2a3a14;color:#4a6a1e;font-size:16px;padding:6px 10px}
-
-.del-btn{
-  background:transparent;border:none;
-  color:#2e2e2e;font-size:12px;
-  cursor:pointer;width:28px;height:28px;
-  border-radius:7px;
-  display:inline-flex;align-items:center;justify-content:center;
-  transition:color .15s,background .15s;
-}
-.del-btn:hover{color:#ff4757;background:#2a1010}
-
-.btn-add-set{
-  width:100%;margin-top:4px;
-  background:transparent;
-  border:1px dashed #252525;color:#484848;
-  border-radius:13px;padding:14px;
-  font-size:14px;font-weight:600;
-  cursor:pointer;letter-spacing:0.02em;
-  transition:border-color .15s,color .15s;
-}
-.btn-add-set:hover{border-color:#3a3a3a;color:#777}
 
 /* ── Timer ──────────────────────────────────────── */
-.timer{
-  position:fixed;bottom:24px;
-  left:50%;transform:translateX(-50%);
-  background:#131313;
-  border:1px solid #222;
-  padding:16px 28px 18px;
-  border-radius:26px;
-  z-index:9999;min-width:230px;text-align:center;
-  box-shadow:0 16px 48px rgba(0,0,0,.8);
+.timer {
+  position: fixed; bottom: 24px;
+  left: 50%; transform: translateX(-50%);
+  background: #131313;
+  border: 1px solid #333;
+  padding: 16px 20px;
+  border-radius: 20px;
+  z-index: 9999; min-width: 280px; text-align: center;
+  box-shadow: 0 10px 30px rgba(0,0,0,.5);
 }
-.timer-label{
-  font-size:10px;font-weight:700;
-  text-transform:uppercase;letter-spacing:0.14em;
-  color:#444;margin-bottom:6px;
-}
-.timer-time{
-  font-size:44px;font-weight:800;
-  letter-spacing:-0.03em;
-  color:#c8f45a;line-height:1;
-}
-.timer-btns{display:flex;gap:8px;margin-top:14px;justify-content:center}
-.t-skip{
-  background:#1e1e1e;color:#555;
-  border:none;border-radius:10px;
-  padding:9px 18px;font-size:13px;font-weight:600;cursor:pointer;
-}
-.t-add{
-  background:#c8f45a15;color:#c8f45a;
-  border:none;border-radius:10px;
-  padding:9px 14px;font-size:13px;font-weight:700;cursor:pointer;
-}
-
-.hidden{display:none!important}
+.timer.hidden { display: none; }
+.timer-label { font-size: 12px; color: #888; margin-bottom: 4px; }
+.timer-time { font-size: 32px; font-weight: 700; margin-bottom: 12px; }
+.timer-btns { display: flex; gap: 8px; justify-content: center; }
+.t-add { background: #222; border: none; color: #fff; padding: 6px 12px; border-radius: 6px; cursor: pointer; }
+.t-skip { background: #c8f45a; border: none; color: #000; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-weight: 600; }
