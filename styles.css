@@ -1,4 +1,9 @@
-body{font-family:Arial;background:#121212;color:#fff;padding:20px}
-.card{background:#1e1e1e;padding:15px;border-radius:12px;margin:10px 0;cursor:pointer}
-button,input{padding:8px;border-radius:8px;margin:5px}
-.timer{font-size:2rem}
+
+body{margin:0;font-family:-apple-system;background:#121212;color:#fff}
+.header{padding:16px;font-size:28px;font-weight:bold}
+.card{margin:12px;padding:16px;background:#1f1f1f;border-radius:16px;cursor:pointer}
+.small{color:#aaa;font-size:12px}
+button{padding:10px 14px;border:none;border-radius:10px;margin:4px}
+input{padding:8px;border-radius:8px}
+table{width:100%;border-collapse:collapse} td,th{padding:8px;border-bottom:1px solid #333}
+.timer{position:fixed;bottom:20px;right:20px;background:#333;padding:20px;border-radius:50%}
