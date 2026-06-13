@@ -1,53 +1,122 @@
-
-const workouts={'Back and Biceps':['Lat Pulldown']};
+const workouts={
+'Back and Biceps':['Cable Curl','Lat Pulldown','Machine Row'],
+'Chest and Triceps':['Bench Press','Incline Bench Press','Tricep Rope Pull Downs'],
+'Arms and Shoulders':['Seated DB Shoulder Press','Cable Lateral Raises','Face Pulls'],
+'Legs':['Lunges','Leg Curl','Leg Extension'],
+'Abs':['Hanging Leg Raise','Cable Crunch With Rope']
+};
+const compounds=['Bench Press','Incline Bench Press','Seated DB Shoulder Press'];
 const app=document.getElementById('app');
 const timer=document.getElementById('timer');
 
 function home(){
- app.innerHTML='<div class="card"><h2>Back and Biceps</h2><button id="open">Open</button></div>';
- document.getElementById('open').onclick=workout;
+ app.innerHTML='<div class="header">Workout Tracker v2.2.0</div>';
+ Object.keys(workouts).forEach(w=>{
+  const d=document.createElement('div');
+  d.className='card';
+  d.textContent=w;
+  d.addEventListener('click',()=>showWorkout(w));
+  app.appendChild(d);
+ });
 }
-function workout(){
- app.innerHTML='<button id="home">Home</button><div class="card"><h2>Lat Pulldown</h2><button id="start">Start</button></div>';
- document.getElementById('home').onclick=home;
- document.getElementById('start').onclick=exercise;
+
+function showWorkout(w){
+ app.innerHTML='<button id="homeBtn">Home</button><div class="header">'+w+'</div>';
+ document.getElementById('homeBtn').addEventListener('click',home);
+ workouts[w].forEach(ex=>{
+   const c=document.createElement('div');
+   c.className='card';
+   c.textContent=ex;
+   c.addEventListener('click',()=>showExercise(w,ex));
+   app.appendChild(c);
+ });
 }
-function exercise(){
- const hist=JSON.parse(localStorage.getItem('latpulldown')||'[]');
- const today=hist.find(x=>x.date===new Date().toLocaleDateString())||{sets:[]};
- app.innerHTML='<button id="back">Back</button><table id="tbl"><tr><th>Set</th><th>Wt</th><th>Reps</th><th>Action</th></tr></table><button id="add">+ Add Set</button>';
- document.getElementById('back').onclick=workout;
- for(let i=0;i<Math.max(today.sets.length,3);i++) row(i+1,today.sets[i]);
- document.getElementById('add').onclick=()=>row(document.querySelectorAll('#tbl tr').length);
+
+function showExercise(w,ex){
+ let hist=JSON.parse(localStorage.getItem(ex)||'[]');
+ let prev=hist[hist.length-1];
+
+ // FIX: build ALL html in one shot before attaching any listeners.
+ // Using innerHTML+= after addEventListener destroys the element and
+ // silently kills the listener — that was the back-button bug.
+ let html='<button id="backBtn">Back</button><div class="header">'+ex+'</div>';
+ if(prev){
+   html+='<div class="card"><b>Previous ('+prev.date+')</b><br>'+
+         prev.sets.map((s,i)=>'Set '+(i+1)+': '+s.weight+' × '+s.reps).join('<br>')+
+         '</div>';
+ }
+ html+='<table id="tbl"><tr><th>Set</th><th>Wt</th><th>Reps</th><th></th><th></th></tr></table>'+
+       '<button id="addSet">+ Add Set</button>';
+ app.innerHTML=html;
+
+ // Attach listeners now that the DOM is stable
+ document.getElementById('backBtn').addEventListener('click',()=>showWorkout(w));
+ document.getElementById('addSet').addEventListener('click',()=>
+   addRow(ex, document.querySelectorAll('#tbl tr').length));
+
+ for(let i=1;i<=Math.max(3,prev?.sets?.length||0);i++) addRow(ex,i,prev?.sets?.[i-1]);
 }
-function row(n,data){
+
+function addRow(ex,n,data={}){
  const tr=document.createElement('tr');
- tr.innerHTML=`<td>${n}</td><td><input value="${data?.weight||''}" id="w${n}"></td><td><input value="${data?.reps||''}" id="r${n}"></td><td><button id="l${n}">${data?'EDIT':'LOG'}</button><button id="d${n}">🗑</button></td>`;
+ tr.innerHTML=
+   '<td class="set-num">'+n+'</td>'+
+   '<td><input class="wt-in" value="'+(data.weight||'')+'"></td>'+
+   '<td><input class="rp-in" value="'+(data.reps||'')+'"></td>'+
+   '<td><button class="log-btn">LOG</button></td>'+
+   '<td><button class="del-btn">🗑</button></td>';
  document.getElementById('tbl').appendChild(tr);
 
- document.getElementById('l'+n).onclick=()=>{
-  let hist=JSON.parse(localStorage.getItem('latpulldown')||'[]');
-  let day=hist.find(x=>x.date===new Date().toLocaleDateString());
-  if(!day){day={date:new Date().toLocaleDateString(),sets:[]};hist.push(day);}
-  day.sets[n-1]={weight:document.getElementById('w'+n).value,reps:document.getElementById('r'+n).value};
-  localStorage.setItem('latpulldown',JSON.stringify(hist));
-  tr.classList.add('logged');
-  document.getElementById('l'+n).textContent='EDIT';
-  startTimer(90);
- };
+ const logBtn=tr.querySelector('.log-btn');
+ const delBtn=tr.querySelector('.del-btn');
+ const wtIn=tr.querySelector('.wt-in');
+ const rpIn=tr.querySelector('.rp-in');
+ const numCell=tr.querySelector('.set-num');
 
- document.getElementById('d'+n).onclick=()=>{
-  let hist=JSON.parse(localStorage.getItem('latpulldown')||'[]');
-  let day=hist.find(x=>x.date===new Date().toLocaleDateString());
-  if(day) day.sets.splice(n-1,1);
-  localStorage.setItem('latpulldown',JSON.stringify(hist));
-  exercise();
- };
+ logBtn.addEventListener('click',()=>{
+  const wt=wtIn.value, rp=rpIn.value;
+  if(!wt||!rp){alert('Enter weight and reps');return;}
+  const setN=parseInt(numCell.textContent);
+  let hist=JSON.parse(localStorage.getItem(ex)||'[]');
+  let today=hist.find(x=>x.date===new Date().toLocaleDateString());
+  if(!today){today={date:new Date().toLocaleDateString(),sets:[]};hist.push(today);}
+  today.sets[setN-1]={weight:wt,reps:rp};
+  localStorage.setItem(ex,JSON.stringify(hist));
+  tr.classList.add('logged');
+  logBtn.disabled=true;
+  logBtn.textContent='LOGGED';
+  startTimer(compounds.includes(ex)?120:90);
+ });
+
+ // FIX: delete a set — removes row from UI, syncs localStorage, renumbers remaining sets
+ delBtn.addEventListener('click',()=>{
+  const setN=parseInt(numCell.textContent);
+  const todayStr=new Date().toLocaleDateString();
+  let hist=JSON.parse(localStorage.getItem(ex)||'[]');
+  const ti=hist.findIndex(x=>x.date===todayStr);
+  if(ti!==-1){
+   hist[ti].sets.splice(setN-1,1);
+   if(hist[ti].sets.length===0) hist.splice(ti,1);
+   localStorage.setItem(ex,JSON.stringify(hist));
+  }
+  tr.remove();
+  // Renumber remaining data rows so set numbers stay sequential
+  document.querySelectorAll('#tbl tr:not(:first-child)').forEach((row,idx)=>{
+   row.querySelector('.set-num').textContent=idx+1;
+  });
+ });
 }
 
 function startTimer(sec){
- clearInterval(window.t);
+ clearInterval(window.ti);
  timer.classList.remove('hidden');
- window.t=setInterval(()=>{timer.innerHTML='<div>⏱ '+sec+'</div><button id="skip">Skip</button>';document.getElementById('skip').onclick=()=>{clearInterval(window.t);timer.classList.add('hidden');};sec--;if(sec<0){clearInterval(window.t);timer.classList.add('hidden');}},1000);
+ function render(){
+  timer.innerHTML='<div>⏱ '+Math.floor(sec/60)+':'+String(sec%60).padStart(2,'0')+'</div><button id="skip">Skip</button><button id="p15">+15</button><button id="p30">+30</button>';
+  document.getElementById('skip').onclick=()=>{clearInterval(window.ti);timer.classList.add('hidden');};
+  document.getElementById('p15').onclick=()=>sec+=15;
+  document.getElementById('p30').onclick=()=>sec+=30;
+ }
+ render();
+ window.ti=setInterval(()=>{sec--;render();if(sec<=0){clearInterval(window.ti);timer.classList.add('hidden');alert('Rest complete!');}},1000);
 }
 home();
