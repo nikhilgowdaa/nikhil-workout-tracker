@@ -34,6 +34,8 @@ const compounds = ['Bench Press', 'Incline Bench Press', 'Seated DB Shoulder Pre
 const app = document.getElementById('app');
 const timerEl = document.getElementById('timer');
 
+// ── Navigation ────────────────────────────────────
+
 function home() {
   app.innerHTML =
     '<div class="home-eyebrow">Training</div>' +
@@ -73,99 +75,151 @@ function showWorkout(w) {
   });
 }
 
-function showExercise(w, ex) {
+// ── Exercise screen (history-first) ──────────────
+
+function showExercise(w, ex, addingSet = false) {
   lastRestTime = compounds.includes(ex) ? 120 : 90;
 
+  const hist = JSON.parse(localStorage.getItem(ex) || '[]');
+  // Newest date first
+  const sorted = [...hist].sort((a, b) => new Date(b.date) - new Date(a.date));
+
+  // Pre-fill from the very last logged set (today's latest, or previous session's latest)
+  let prefill = { weight: '', reps: '' };
+  if (sorted.length > 0 && sorted[0].sets.length > 0) {
+    const last = sorted[0].sets[sorted[0].sets.length - 1];
+    prefill = { weight: last.weight, reps: last.reps };
+  }
+
+  // Nav bar – hide + button while the add row is open
   let html =
     '<div class="nav-bar">' +
       '<button class="btn-back" id="backBtn">‹</button>' +
       '<div class="nav-title">' + ex + '</div>' +
+      (!addingSet ? '<button class="btn-plus" id="addBtn">+</button>' : '') +
     '</div>';
 
-  let hist = JSON.parse(localStorage.getItem(ex) || '[]');
-  let prev = hist[hist.length - 1];
-
-  html +=
-    '<div class="sets-wrap">' +
-      '<table id="tbl">' +
-        '<thead><tr><th>SET</th><th>WEIGHT</th><th>REPS</th><th></th><th></th></tr></thead>' +
-        '<tbody></tbody>' +
-      '</table>' +
-      '<button class="btn-add-set" id="addSet">+ Add Set</button>' +
-    '</div>';
-
-  if (prev) {
+  // ── Quick-add row ──────────────────────────────
+  if (addingSet) {
     html +=
-      '<div class="prev-card" style="margin-top: 32px;">' +
-        '<div class="prev-label">Last session &nbsp;·&nbsp; ' + prev.date + '</div>' +
-        prev.sets.map((s, i) =>
-          '<div class="prev-row">' +
-            '<span class="prev-set">Set ' + (i + 1) + '</span>' +
-            '<span class="prev-val">' + s.weight + ' kg &nbsp;×&nbsp; ' + s.reps + ' reps</span>' +
-          '</div>'
-        ).join('') +
+      '<div class="quick-add-wrap">' +
+        '<div class="qa-label">New Set</div>' +
+        '<div class="qa-row">' +
+          '<input class="qa-input" type="number" inputmode="decimal" placeholder="kg" value="' + prefill.weight + '" id="qaWeight">' +
+          '<span class="qa-sep">×</span>' +
+          '<input class="qa-input" type="number" inputmode="numeric" placeholder="reps" value="' + prefill.reps + '" id="qaReps">' +
+          '<button class="log-btn" id="qaLog">LOG</button>' +
+          '<button class="qa-cancel" id="qaCancel">✕</button>' +
+        '</div>' +
       '</div>';
+  }
+
+  // ── Sessions history ───────────────────────────
+  if (sorted.length === 0) {
+    if (!addingSet) {
+      html += '<div class="empty-state">No sets logged yet.<br>Tap + to log your first set.</div>';
+    }
+  } else {
+    html += '<div class="sessions-wrap">';
+    sorted.forEach(session => {
+      const n = session.sets.length;
+      html +=
+        '<div class="session-group">' +
+          '<div class="session-date-hdr">' +
+            '<span class="sd-label">' + formatDate(session.date) + '</span>' +
+            '<span class="sd-meta">' + n + (n === 1 ? ' set' : ' sets') + '</span>' +
+          '</div>';
+      session.sets.forEach((set, i) => {
+        html +=
+          '<div class="session-set-row">' +
+            '<span class="ss-num">Set ' + (i + 1) + '</span>' +
+            '<span class="ss-val">' + set.weight + ' kg &nbsp;×&nbsp; ' + set.reps + ' reps</span>' +
+            '<span class="ss-time">' + (set.time || '—') + '</span>' +
+            '<button class="del-hist-btn" data-date="' + encodeURIComponent(session.date) + '" data-idx="' + i + '">✕</button>' +
+          '</div>';
+      });
+      html += '</div>';
+    });
+    html += '</div>';
   }
 
   app.innerHTML = html;
 
+  // ── Wire up events ─────────────────────────────
   document.getElementById('backBtn').addEventListener('click', () => showWorkout(w));
-  document.getElementById('addSet').addEventListener('click', () =>
-    addRow(ex, document.querySelectorAll('#tbl tbody tr').length + 1));
 
-  const n = prev?.sets?.length || 3;
-  for (let i = 1; i <= n; i++) addRow(ex, i, prev?.sets?.[i - 1]);
-}
+  if (!addingSet) {
+    document.getElementById('addBtn').addEventListener('click', () => showExercise(w, ex, true));
+  } else {
+    const qaWeight = document.getElementById('qaWeight');
+    const qaReps = document.getElementById('qaReps');
 
-function addRow(ex, n, data = {}) {
-  const tr = document.createElement('tr');
-  tr.innerHTML =
-    '<td class="set-num">' + n + '</td>' +
-    '<td><input class="wt-in" type="number" inputmode="decimal" placeholder="—" value="' + (data.weight || '') + '"></td>' +
-    '<td><input class="rp-in" type="number" inputmode="numeric" placeholder="—" value="' + (data.reps || '') + '"></td>' +
-    '<td><button class="log-btn">LOG</button></td>' +
-    '<td><button class="del-btn">✕</button></td>';
-  document.querySelector('#tbl tbody').appendChild(tr);
+    document.getElementById('qaLog').addEventListener('click', () => {
+      const wt = qaWeight.value.trim();
+      const rp = qaReps.value.trim();
+      if (!wt || !rp) { alert('Enter weight and reps'); return; }
+      logSet(ex, wt, rp);
+      startTimer(lastRestTime);
+      showExercise(w, ex, false); // back to history view, new set visible at top
+    });
 
-  const logBtn = tr.querySelector('.log-btn');
-  const delBtn = tr.querySelector('.del-btn');
-  const wtIn = tr.querySelector('.wt-in');
-  const rpIn = tr.querySelector('.rp-in');
-  const numCell = tr.querySelector('.set-num');
+    document.getElementById('qaCancel').addEventListener('click', () => showExercise(w, ex, false));
 
-  logBtn.addEventListener('click', () => {
-    const wt = wtIn.value, rp = rpIn.value;
-    if (!wt || !rp) { alert('Enter weight and reps'); return; }
-    const setN = parseInt(numCell.textContent);
-    let hist = JSON.parse(localStorage.getItem(ex) || '[]');
-    let today = hist.find(x => x.date === new Date().toLocaleDateString());
-    if (!today) { today = { date: new Date().toLocaleDateString(), sets: [] }; hist.push(today); }
-    today.sets[setN - 1] = { weight: wt, reps: rp };
-    localStorage.setItem(ex, JSON.stringify(hist));
-    tr.classList.add('logged');
-    logBtn.disabled = true;
-    logBtn.textContent = '✓';
-    startTimer(lastRestTime);
-  });
-
-  delBtn.addEventListener('click', () => {
-    const setN = parseInt(numCell.textContent);
-    const todayStr = new Date().toLocaleDateString();
-    let hist = JSON.parse(localStorage.getItem(ex) || '[]');
-    const ti = hist.findIndex(x => x.date === todayStr);
-    if (ti !== -1) {
-      hist[ti].sets.splice(setN - 1, 1);
-      if (hist[ti].sets.length === 0) hist.splice(ti, 1);
-      localStorage.setItem(ex, JSON.stringify(hist));
+    // Smart focus: if no prefill, start at weight; if pre-filled, jump straight to reps
+    if (!prefill.weight) {
+      qaWeight.focus();
+    } else {
+      qaReps.focus();
+      qaReps.select();
     }
-    tr.remove();
-    document.querySelectorAll('#tbl tbody tr').forEach((row, idx) => {
-      row.querySelector('.set-num').textContent = idx + 1;
+  }
+
+  // Delete buttons for any historical set
+  document.querySelectorAll('.del-hist-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const date = decodeURIComponent(btn.dataset.date);
+      const idx = parseInt(btn.dataset.idx);
+      deleteHistSet(ex, date, idx);
+      showExercise(w, ex, addingSet); // refresh in place
     });
   });
 }
 
-// Play a short beep when rest is done using Web Audio API
+// ── Data helpers ──────────────────────────────────
+
+function logSet(ex, weight, reps) {
+  const todayStr = new Date().toLocaleDateString();
+  const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  let hist = JSON.parse(localStorage.getItem(ex) || '[]');
+  let today = hist.find(x => x.date === todayStr);
+  if (!today) { today = { date: todayStr, sets: [] }; hist.push(today); }
+  today.sets.push({ weight, reps, time: timeStr });
+  localStorage.setItem(ex, JSON.stringify(hist));
+}
+
+function deleteHistSet(ex, date, idx) {
+  let hist = JSON.parse(localStorage.getItem(ex) || '[]');
+  const di = hist.findIndex(x => x.date === date);
+  if (di !== -1) {
+    hist[di].sets.splice(idx, 1);
+    if (hist[di].sets.length === 0) hist.splice(di, 1);
+    localStorage.setItem(ex, JSON.stringify(hist));
+  }
+}
+
+function formatDate(dateStr) {
+  const todayStr = new Date().toLocaleDateString();
+  const yd = new Date(); yd.setDate(yd.getDate() - 1);
+  const yStr = yd.toLocaleDateString();
+  if (dateStr === todayStr) return 'Today';
+  if (dateStr === yStr) return 'Yesterday';
+  try {
+    return new Date(dateStr).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+  } catch (e) { return dateStr; }
+}
+
+// ── Audio beep ────────────────────────────────────
+
 function playBeep() {
   try {
     const ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -183,14 +237,13 @@ function playBeep() {
   } catch (e) {}
 }
 
+// ── Rest timer ────────────────────────────────────
+
 function startTimer(sec) {
   lastRestTime = sec;
   clearInterval(window.ti);
   timerEl.classList.remove('hidden');
 
-  // KEY FIX: store absolute end time instead of counting down a variable.
-  // When iOS backgrounds the PWA and kills setInterval, we can still
-  // calculate the correct remaining time when the app comes back.
   window.timerEndTime = Date.now() + sec * 1000;
   let beeped = false;
 
@@ -220,7 +273,6 @@ function startTimer(sec) {
       timerEl.classList.add('hidden');
     };
 
-    // Preset buttons: selecting restarts timer AND updates lastRestTime for future sets
     document.querySelectorAll('.t-preset').forEach(btn => {
       btn.onclick = () => {
         const newSec = parseInt(btn.dataset.s);
@@ -243,8 +295,6 @@ function startTimer(sec) {
     }
   }
 
-  // visibilitychange fires when user returns to the PWA.
-  // We recalculate from the stored end timestamp so the display is always accurate.
   function visHandler() {
     if (!document.hidden) {
       const remaining = getRemaining();
@@ -252,14 +302,12 @@ function startTimer(sec) {
       if (remaining === 0) {
         if (!beeped) { beeped = true; playBeep(); }
       } else {
-        // Restart the interval since iOS may have killed it
         clearInterval(window.ti);
         window.ti = setInterval(tick, 500);
       }
     }
   }
 
-  // Remove any existing handler before attaching a new one
   if (window.timerVisHandler) {
     document.removeEventListener('visibilitychange', window.timerVisHandler);
   }
