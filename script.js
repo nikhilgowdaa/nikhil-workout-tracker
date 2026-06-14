@@ -74,7 +74,6 @@ function showWorkout(w) {
 }
 
 function showExercise(w, ex) {
-  // Set default time for this exercise if it's a compound move
   lastRestTime = compounds.includes(ex) ? 120 : 90;
 
   let html =
@@ -86,7 +85,6 @@ function showExercise(w, ex) {
   let hist = JSON.parse(localStorage.getItem(ex) || '[]');
   let prev = hist[hist.length - 1];
 
-  // 1. Current Session Logging Area
   html +=
     '<div class="sets-wrap">' +
       '<table id="tbl">' +
@@ -96,7 +94,6 @@ function showExercise(w, ex) {
       '<button class="btn-add-set" id="addSet">+ Add Set</button>' +
     '</div>';
 
-  // 2. Last Session Details below
   if (prev) {
     html +=
       '<div class="prev-card" style="margin-top: 32px;">' +
@@ -148,8 +145,6 @@ function addRow(ex, n, data = {}) {
     tr.classList.add('logged');
     logBtn.disabled = true;
     logBtn.textContent = '✓';
-    
-    // Start timer using the persisted lastRestTime
     startTimer(lastRestTime);
   });
 
@@ -170,47 +165,109 @@ function addRow(ex, n, data = {}) {
   });
 }
 
+// Play a short beep when rest is done using Web Audio API
+function playBeep() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    [0, 0.18, 0.36].forEach(offset => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.frequency.value = 880;
+      gain.gain.setValueAtTime(0.3, ctx.currentTime + offset);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + offset + 0.15);
+      osc.start(ctx.currentTime + offset);
+      osc.stop(ctx.currentTime + offset + 0.15);
+    });
+  } catch (e) {}
+}
+
 function startTimer(sec) {
   lastRestTime = sec;
   clearInterval(window.ti);
   timerEl.classList.remove('hidden');
-  
-  function render() {
-    const mins = Math.floor(sec / 60);
-    const secs = String(sec % 60).padStart(2, '0');
-    
-    timerEl.innerHTML =
-      '<div class="timer-label">' + (sec > 0 ? 'Rest Timer' : 'Rest Finished! 💪') + '</div>' +
-      '<div class="timer-time">' + (sec >= 0 ? mins + ':' + secs : '0:00') + '</div>' +
-      '<div class="timer-btns">' +
-        '<button class="t-skip" id="skip">Close</button>' +
-        '<button class="t-add" id="p15">+15s</button>' +
-        '<button class="t-add" id="p30">+30s</button>' +
-        '<input type="number" id="customTime" placeholder="Custom (s)" style="width:80px; padding:5px; border-radius:4px; border:none;">' +
-      '</div>';
-      
-    document.getElementById('skip').onclick = () => { clearInterval(window.ti); timerEl.classList.add('hidden'); };
-    document.getElementById('p15').onclick = () => { sec += 15; lastRestTime = sec; render(); };
-    document.getElementById('p30').onclick = () => { sec += 30; lastRestTime = sec; render(); };
-    
-    const customInput = document.getElementById('customTime');
-    customInput.onchange = (e) => {
-        sec = parseInt(e.target.value) || sec;
-        lastRestTime = sec;
-        render();
-    };
+
+  // KEY FIX: store absolute end time instead of counting down a variable.
+  // When iOS backgrounds the PWA and kills setInterval, we can still
+  // calculate the correct remaining time when the app comes back.
+  window.timerEndTime = Date.now() + sec * 1000;
+  let beeped = false;
+
+  function getRemaining() {
+    return Math.max(0, Math.round((window.timerEndTime - Date.now()) / 1000));
   }
-  
-  render();
-  window.ti = setInterval(() => {
-    if (sec > 0) {
-      sec--;
-      render();
-    } else {
+
+  function render() {
+    const remaining = getRemaining();
+    const finished = remaining === 0;
+    const mins = Math.floor(remaining / 60);
+    const secs = String(remaining % 60).padStart(2, '0');
+
+    timerEl.innerHTML =
+      '<div class="timer-label">' + (finished ? 'Rest Complete! 💪' : 'Rest Timer') + '</div>' +
+      '<div class="timer-time">' + mins + ':' + secs + '</div>' +
+      '<div class="timer-btns">' +
+        '<button class="t-skip" id="tSkip">Close</button>' +
+        '<button class="t-preset' + (lastRestTime === 60 ? ' t-selected' : '') + '" data-s="60">60s</button>' +
+        '<button class="t-preset' + (lastRestTime === 90 ? ' t-selected' : '') + '" data-s="90">90s</button>' +
+        '<button class="t-preset' + (lastRestTime === 120 ? ' t-selected' : '') + '" data-s="120">120s</button>' +
+      '</div>';
+
+    document.getElementById('tSkip').onclick = () => {
       clearInterval(window.ti);
-      render(); // Final render to show "Rest Finished!"
+      document.removeEventListener('visibilitychange', window.timerVisHandler);
+      timerEl.classList.add('hidden');
+    };
+
+    // Preset buttons: selecting restarts timer AND updates lastRestTime for future sets
+    document.querySelectorAll('.t-preset').forEach(btn => {
+      btn.onclick = () => {
+        const newSec = parseInt(btn.dataset.s);
+        lastRestTime = newSec;
+        window.timerEndTime = Date.now() + newSec * 1000;
+        beeped = false;
+        clearInterval(window.ti);
+        window.ti = setInterval(tick, 500);
+        render();
+      };
+    });
+  }
+
+  function tick() {
+    const remaining = getRemaining();
+    render();
+    if (remaining === 0) {
+      clearInterval(window.ti);
+      if (!beeped) { beeped = true; playBeep(); }
     }
-  }, 1000);
+  }
+
+  // visibilitychange fires when user returns to the PWA.
+  // We recalculate from the stored end timestamp so the display is always accurate.
+  function visHandler() {
+    if (!document.hidden) {
+      const remaining = getRemaining();
+      render();
+      if (remaining === 0) {
+        if (!beeped) { beeped = true; playBeep(); }
+      } else {
+        // Restart the interval since iOS may have killed it
+        clearInterval(window.ti);
+        window.ti = setInterval(tick, 500);
+      }
+    }
+  }
+
+  // Remove any existing handler before attaching a new one
+  if (window.timerVisHandler) {
+    document.removeEventListener('visibilitychange', window.timerVisHandler);
+  }
+  window.timerVisHandler = visHandler;
+  document.addEventListener('visibilitychange', visHandler);
+
+  render();
+  window.ti = setInterval(tick, 500);
 }
 
 home();

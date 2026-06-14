@@ -187,9 +187,9 @@ tr.logged .log-btn{background:transparent;border:1px solid #2a3a14;color:#4a6a1e
   left:50%;transform:translateX(-50%);
   background:#131313;
   border:1px solid #222;
-  padding:16px 28px 18px;
+  padding:16px 20px 18px;
   border-radius:26px;
-  z-index:9999;min-width:230px;text-align:center;
+  z-index:9999;min-width:260px;text-align:center;
   box-shadow:0 16px 48px rgba(0,0,0,.8);
 }
 .timer-label{
@@ -202,16 +202,34 @@ tr.logged .log-btn{background:transparent;border:1px solid #2a3a14;color:#4a6a1e
   letter-spacing:-0.03em;
   color:#c8f45a;line-height:1;
 }
-.timer-btns{display:flex;gap:8px;margin-top:14px;justify-content:center}
+.timer-btns{
+  display:flex;gap:8px;margin-top:14px;
+  justify-content:center;align-items:center;
+}
 .t-skip{
   background:#1e1e1e;color:#555;
   border:none;border-radius:10px;
-  padding:9px 18px;font-size:13px;font-weight:600;cursor:pointer;
+  padding:9px 14px;font-size:13px;font-weight:600;cursor:pointer;
+  flex-shrink:0;
 }
-.t-add{
+
+/* Preset rest-time buttons */
+.t-preset{
   background:#c8f45a15;color:#c8f45a;
-  border:none;border-radius:10px;
-  padding:9px 14px;font-size:13px;font-weight:700;cursor:pointer;
+  border:1px solid #c8f45a30;
+  border-radius:10px;
+  padding:9px 13px;font-size:13px;font-weight:700;
+  cursor:pointer;
+  transition:background .15s, color .15s, border-color .15s;
+  flex:1;
+}
+.t-preset:active{opacity:.7}
+
+/* Active / selected preset */
+.t-preset.t-selected{
+  background:#c8f45a;
+  color:#0a0a0a;
+  border-color:#c8f45a;
 }
 
 .hidden{display:none!important}
